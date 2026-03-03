@@ -76,7 +76,7 @@ export default async function PlayersPage({ params }: Props) {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Jogadores</h1>
             {isAdmin && (
-              <PlayerForm peladaId={peladaId} onSuccess={() => {}}>
+              <PlayerForm peladaId={peladaId}>
                 <Button size="sm">
                   <PlusCircle className="w-4 h-4 mr-2" />
                   Convidado
@@ -104,7 +104,6 @@ export default async function PlayersPage({ params }: Props) {
               <MemberList
                 members={(members as unknown as PeladaMember[]) ?? []}
                 canManage={isAdmin}
-                onUpdate={() => {}}
               />
             </TabsContent>
 

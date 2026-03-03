@@ -57,7 +57,7 @@ export function RoundList({ rounds, peladaId, champId }: RoundListProps) {
                     {statusLabel[round.status]}
                   </Badge>
                   <Link
-                    href={`/pelada/${peladaId}/championships/${champId}/match/new?round=${round.id}`}
+                    href={`/pelada/${peladaId}/championships/${champId}/round/${round.id}`}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <ChevronRight className="w-4 h-4" />

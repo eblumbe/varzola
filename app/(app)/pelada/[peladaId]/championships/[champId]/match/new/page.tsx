@@ -19,6 +19,13 @@ export default async function NewMatchPage({ params, searchParams }: Props) {
     .from('pelada_members').select('role').eq('pelada_id', peladaId).eq('user_id', user.id).eq('status', 'active').single()
   if (!memberInfo || memberInfo.role === 'player') redirect(`/pelada/${peladaId}/championships/${champId}`)
 
+  const [{ data: pelada }, { data: round }] = await Promise.all([
+    supabase.from('peladas').select('location').eq('id', peladaId).single(),
+    roundId
+      ? supabase.from('rounds').select('date').eq('id', roundId).single()
+      : Promise.resolve({ data: null }),
+  ])
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
@@ -29,7 +36,13 @@ export default async function NewMatchPage({ params, searchParams }: Props) {
           <CardTitle>Detalhes da Partida</CardTitle>
         </CardHeader>
         <CardContent>
-          <MatchForm peladaId={peladaId} champId={champId} roundId={roundId} />
+          <MatchForm
+            peladaId={peladaId}
+            champId={champId}
+            roundId={roundId}
+            defaultDate={round?.date ?? undefined}
+            defaultLocation={pelada?.location ?? undefined}
+          />
         </CardContent>
       </Card>
     </div>

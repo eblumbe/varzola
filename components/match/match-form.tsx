@@ -10,13 +10,11 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { createMatch } from '@/lib/services/match-service'
 
 const schema = z.object({
   date: z.string().min(1, { message: 'Data obrigatória' }),
   location: z.string().optional(),
-  notes: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -25,15 +23,20 @@ interface MatchFormProps {
   peladaId: string
   champId: string
   roundId?: string
+  defaultDate?: string
+  defaultLocation?: string
 }
 
-export function MatchForm({ peladaId, champId, roundId }: MatchFormProps) {
+export function MatchForm({ peladaId, champId, roundId, defaultDate, defaultLocation }: MatchFormProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { date: new Date().toISOString().split('T')[0] },
+    defaultValues: {
+      date: defaultDate ?? new Date().toISOString().split('T')[0],
+      location: defaultLocation ?? '',
+    },
   })
 
   async function onSubmit(data: FormData) {
@@ -43,7 +46,6 @@ export function MatchForm({ peladaId, champId, roundId }: MatchFormProps) {
       round_id: roundId,
       date: data.date,
       location: data.location,
-      notes: data.notes,
     })
 
     if (error || !match) {
@@ -67,11 +69,6 @@ export function MatchForm({ peladaId, champId, roundId }: MatchFormProps) {
       <div className="space-y-2">
         <Label>Local</Label>
         <Input placeholder="Ex: Campo do Zé" {...register('location')} />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Observações</Label>
-        <Textarea placeholder="Informações adicionais..." {...register('notes')} />
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>

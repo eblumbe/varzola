@@ -110,7 +110,7 @@ export function PeladaForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="max_players">Máx. jogadores</Label>
+          <Label htmlFor="max_players">Máx. por rodada</Label>
           <Input id="max_players" type="number" min={2} max={50} {...register('max_players', { valueAsNumber: true })} />
         </div>
 
