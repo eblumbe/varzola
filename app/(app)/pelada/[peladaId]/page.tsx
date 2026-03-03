@@ -7,8 +7,9 @@ import { MobileNav } from '@/components/layout/mobile-nav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Users, Trophy, Calendar, MapPin, Copy } from 'lucide-react'
+import { Users, Trophy, Calendar, MapPin } from 'lucide-react'
 import { DAY_OF_WEEK_MAP, formatCurrency } from '@/lib/utils/format'
+import { CopyCodeButton } from '@/components/pelada/copy-code-button'
 
 interface Props {
   params: Promise<{ peladaId: string }>
@@ -110,15 +111,7 @@ export default async function PeladaPage({ params }: Props) {
                   <p className="text-xs text-muted-foreground mb-1">Código de convite</p>
                   <p className="text-xl font-mono font-bold tracking-widest">{pelada.code}</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {}}
-                  className="shrink-0"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copiar
-                </Button>
+                <CopyCodeButton code={pelada.code} />
               </div>
             </CardContent>
           </Card>
