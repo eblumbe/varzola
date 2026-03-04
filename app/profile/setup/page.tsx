@@ -59,10 +59,13 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground text-xl">⚽</span>
-          </div>
+        <div className="flex flex-col items-center gap-3 mb-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logo-principal.png"
+            alt="Varzola"
+            style={{ width: 100, height: 100, objectFit: 'contain' }}
+          />
           <h1 className="text-2xl font-bold">Bem-vindo ao Varzola!</h1>
         </div>
 

@@ -1,17 +1,23 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Trophy } from 'lucide-react'
 import type { RankingEntry } from '@/lib/types'
 
 interface RankingTableProps {
   entries: RankingEntry[]
+}
+
+const positionStyle = (index: number) => {
+  if (index === 0) return 'bg-amber-500 text-white'
+  if (index === 1) return 'bg-gray-400 text-white'
+  if (index === 2) return 'bg-amber-700 text-white'
+  return 'bg-[#2c5234] text-white'
+}
+
+const positionLabel = (index: number) => {
+  if (index === 0) return '🥇'
+  if (index === 1) return '🥈'
+  if (index === 2) return '🥉'
+  return String(index + 1)
 }
 
 export function RankingTable({ entries }: RankingTableProps) {
@@ -24,57 +30,51 @@ export function RankingTable({ entries }: RankingTableProps) {
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">#</TableHead>
-            <TableHead>Jogador</TableHead>
-            <TableHead className="text-center">Partidas</TableHead>
-            <TableHead className="text-center">Vitórias</TableHead>
-            <TableHead className="text-center">Gols</TableHead>
-            <TableHead className="text-center">Assists</TableHead>
-            <TableHead className="text-center font-bold">Pts</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {entries.map((entry, index) => (
-            <TableRow key={`${entry.user_id ?? entry.guest_player_id}`}>
-              <TableCell>
-                <div className="flex items-center justify-center">
-                  {index === 0 ? (
-                    <Trophy className="w-4 h-4 text-yellow-500" />
-                  ) : index === 1 ? (
-                    <Trophy className="w-4 h-4 text-gray-400" />
-                  ) : index === 2 ? (
-                    <Trophy className="w-4 h-4 text-amber-600" />
-                  ) : (
-                    <span className="text-muted-foreground text-sm">{index + 1}</span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div>
-                  <p className="font-medium text-sm">{entry.player_name}</p>
+    <div className="space-y-3">
+      {entries.map((entry, index) => {
+        const initials = entry.player_name
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2)
+
+        return (
+          <div
+            key={`${entry.user_id ?? entry.guest_player_id}`}
+            className="flex items-center justify-between bg-[#f5e7c7] p-3 rounded-lg border border-[#e6d5b0]"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${positionStyle(index)}`}
+              >
+                {positionLabel(index)}
+              </div>
+              <Avatar className="border-2 border-[#2c5234]">
+                <AvatarFallback className="bg-[#2c5234] text-white text-xs">{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-bold leading-tight">{entry.player_name}</p>
+                <div className="flex items-center gap-1 flex-wrap">
                   {entry.player_nickname && (
-                    <p className="text-xs text-muted-foreground">@{entry.player_nickname}</p>
+                    <span className="text-xs text-muted-foreground">@{entry.player_nickname}</span>
                   )}
                   {!entry.user_id && (
-                    <Badge variant="outline" className="text-xs mt-0.5">Convidado</Badge>
+                    <Badge variant="outline" className="text-xs">Convidado</Badge>
                   )}
+                  <span className="text-xs text-muted-foreground">
+                    {entry.matches_played}J · {entry.wins}V · {entry.total_goals}G
+                  </span>
                 </div>
-              </TableCell>
-              <TableCell className="text-center text-sm">{entry.matches_played}</TableCell>
-              <TableCell className="text-center text-sm">{entry.wins}</TableCell>
-              <TableCell className="text-center text-sm">{entry.total_goals}</TableCell>
-              <TableCell className="text-center text-sm">{entry.total_assists}</TableCell>
-              <TableCell className="text-center">
-                <span className="font-bold text-sm">{entry.total_points}</span>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-2xl font-bold text-[#2c5234]">{entry.total_points}</div>
+              <div className="text-xs text-muted-foreground">pts</div>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

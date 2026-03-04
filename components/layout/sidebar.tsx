@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -47,11 +48,15 @@ export function Sidebar({ peladaId }: SidebarProps) {
 
   return (
     <aside className="hidden md:flex flex-col w-64 border-r bg-background min-h-screen p-4">
-      <div className="flex items-center gap-2 mb-8 px-2">
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-          <span className="text-primary-foreground text-sm">⚽</span>
-        </div>
-        <span className="font-bold text-lg">Varzola</span>
+      <div className="flex items-center mb-8 px-2">
+        <Image
+          src="/images/logo-compacto.png"
+          alt="Varzola"
+          width={140}
+          height={40}
+          className="object-contain"
+          priority
+        />
       </div>
 
       <nav className="flex-1 space-y-1">

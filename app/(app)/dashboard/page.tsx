@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PeladaCard } from '@/components/pelada/pelada-card'
@@ -41,7 +42,9 @@ export default async function DashboardPage() {
 
       {peladas.length === 0 ? (
         <div className="text-center py-16 border rounded-lg bg-muted/30">
-          <p className="text-4xl mb-4">⚽</p>
+          <div className="flex justify-center mb-4">
+            <Image src="/images/icone.png" alt="Varzola" width={64} height={64} className="object-contain" />
+          </div>
           <h2 className="text-lg font-semibold mb-2">Nenhuma pelada ainda</h2>
           <p className="text-muted-foreground text-sm mb-6">
             Crie sua primeira pelada ou entre em uma com um código.
