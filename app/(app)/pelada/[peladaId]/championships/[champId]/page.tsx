@@ -6,9 +6,11 @@ import { Header } from '@/components/layout/header'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlusCircle } from 'lucide-react'
 import { RoundList } from '@/components/championship/round-list'
-import type { Round } from '@/lib/types'
+import { TopScorers } from '@/components/ranking/top-scorers'
+import type { Round, RankingEntry } from '@/lib/types'
 
 interface Props { params: Promise<{ peladaId: string; champId: string }> }
 
@@ -26,17 +28,26 @@ export default async function ChampionshipPage({ params }: Props) {
     .from('pelada_members').select('role').eq('pelada_id', peladaId).eq('user_id', user.id).eq('status', 'active').single()
   if (!memberInfo) redirect('/dashboard')
 
-  const { data: champ } = await supabase
-    .from('championships')
-    .select('*, rounds(*, matches(id, status, date))')
-    .eq('id', champId)
-    .single()
+  const [{ data: champ }, { data: scorersData }] = await Promise.all([
+    supabase
+      .from('championships')
+      .select('*, rounds(*, matches(id, status, date))')
+      .eq('id', champId)
+      .single(),
+    supabase
+      .from('championship_rankings')
+      .select('*')
+      .eq('championship_id', champId)
+      .order('total_goals', { ascending: false })
+      .limit(5),
+  ])
   if (!champ) notFound()
 
   const statusMap = { active: 'Ativo', completed: 'Encerrado', cancelled: 'Cancelado' }
   const isAdmin = memberInfo.role === 'owner' || memberInfo.role === 'admin'
   const rounds = (champ.rounds as unknown as Round[]) ?? []
   const completedRounds = rounds.filter((r) => r.status === 'completed').length
+  const topScorers = (scorersData as unknown as RankingEntry[]) ?? []
 
   return (
     <div className="flex min-h-screen">
@@ -66,10 +77,21 @@ export default async function ChampionshipPage({ params }: Props) {
             <RoundList rounds={rounds} peladaId={peladaId} champId={champId} />
           </div>
 
+          {topScorers.some((e) => e.total_goals > 0) && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Artilheiros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TopScorers entries={topScorers} />
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex gap-3">
             <Button variant="outline" asChild className="flex-1">
               <Link href={`/pelada/${peladaId}/rankings?champ=${champId}`}>
-                Ver ranking
+                Ver ranking completo
               </Link>
             </Button>
           </div>

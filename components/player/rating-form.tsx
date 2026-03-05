@@ -2,13 +2,47 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { submitRating } from '@/lib/services/rating-service'
 import type { Match } from '@/lib/types'
+
+const ratingGuide = [
+  {
+    key: 'technical',
+    label: 'Técnica',
+    description: 'Qualidade no toque de bola, domínio, passes, dribles e finalizações. Nota alta = jogador com grande controle técnico e precisão nos movimentos.',
+    examples: '1–3: Muitos erros básicos · 4–6: Mediano, comete erros · 7–8: Boa técnica, consistente · 9–10: Excepcional, raramente erra',
+  },
+  {
+    key: 'physical',
+    label: 'Físico',
+    description: 'Resistência, velocidade, força e disposição durante toda a partida. Nota alta = jogador que não cansa, corre muito e mantém o ritmo até o final.',
+    examples: '1–3: Cansou rápido, pouco esforço · 4–6: Ritmo regular · 7–8: Muito disposto, forte · 9–10: Inesgotável, acima de todos fisicamente',
+  },
+  {
+    key: 'tactical',
+    label: 'Tática',
+    description: 'Posicionamento em campo, leitura de jogo, inteligência nas decisões e contribuição coletiva. Nota alta = jogador que "leu" o jogo muito bem.',
+    examples: '1–3: Fora de posição, decisões ruins · 4–6: Regular · 7–8: Boa leitura, posicionamento certo · 9–10: Dominou taticamente',
+  },
+  {
+    key: 'fair_play',
+    label: 'Fair Play',
+    description: 'Respeito com adversários e companheiros, espírito esportivo, reação a lances difíceis e comportamento geral durante a pelada.',
+    examples: '1–3: Reclamou muito, desrespeitoso · 4–6: Normal, sem destaque · 7–8: Sempre fair, bom humor · 9–10: Exemplo de esportividade',
+  },
+]
 
 interface RatingFormProps {
   match: Match
@@ -73,9 +107,33 @@ export function RatingForm({ match }: RatingFormProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Avalie o desempenho dos jogadores nesta partida (1–10).
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Avalie o desempenho dos jogadores nesta partida (1–10).
+        </p>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Como avaliar
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Como avaliar cada critério</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              {ratingGuide.map((item) => (
+                <div key={item.key} className="space-y-1">
+                  <p className="font-semibold text-sm">{item.label}</p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <p className="text-xs text-muted-foreground bg-muted rounded px-2 py-1">{item.examples}</p>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
       {players.map((player) => {
         const r = getRating(player.id)
         const done = submitted.has(player.id)

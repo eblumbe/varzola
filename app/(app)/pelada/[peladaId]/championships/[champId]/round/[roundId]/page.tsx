@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlusCircle, Calendar } from 'lucide-react'
 import { RoundPlayers } from '@/components/championship/round-players'
+import { MvpVote } from '@/components/championship/mvp-vote'
 import { formatDateShort } from '@/lib/utils/format'
 
 interface Props {
@@ -40,11 +41,11 @@ export default async function RoundPage({ params }: Props) {
 
   const isAdmin = memberInfo.role === 'owner' || memberInfo.role === 'admin'
 
-  // Fetch all pelada members + guests
-  const [{ data: members }, { data: guests }, { data: roundPlayers }] = await Promise.all([
+  const [{ data: members }, { data: guests }, { data: roundPlayers }, { data: mvpVotes }] = await Promise.all([
     supabase.from('pelada_members').select('id, user_id, profile:profiles(full_name, nickname)').eq('pelada_id', peladaId).eq('status', 'active'),
     supabase.from('guest_players').select('id, name, nickname').eq('pelada_id', peladaId).eq('status', 'active'),
     supabase.from('round_players').select('user_id, guest_player_id').eq('round_id', roundId),
+    supabase.from('round_mvp_votes').select('voter_user_id, voted_user_id, voted_guest_id').eq('round_id', roundId),
   ])
 
   const confirmedUserIds = new Set(roundPlayers?.filter((rp) => rp.user_id).map((rp) => rp.user_id) ?? [])
@@ -68,6 +69,22 @@ export default async function RoundPage({ params }: Props) {
       confirmed: confirmedGuestIds.has(g.id),
     })),
   ]
+
+  const confirmedPlayers = players
+    .filter((p) => p.confirmed)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      user_id: 'user_id' in p ? p.user_id : undefined,
+      guest_player_id: 'guest_player_id' in p ? p.guest_player_id : undefined,
+    }))
+
+  const votes = (mvpVotes ?? []).map((v) => ({
+    voter_user_id: v.voter_user_id,
+    voted_user_id: v.voted_user_id ?? null,
+    voted_guest_id: v.voted_guest_id ?? null,
+  }))
 
   return (
     <div className="flex min-h-screen">
@@ -106,6 +123,21 @@ export default async function RoundPage({ params }: Props) {
                 maxPlayers={pelada.max_players ?? 20}
                 players={players}
                 canManage={isAdmin}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">MVP da Rodada</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MvpVote
+                roundId={roundId}
+                roundStatus={round.status}
+                players={confirmedPlayers}
+                currentUserId={user.id}
+                initialVotes={votes}
               />
             </CardContent>
           </Card>

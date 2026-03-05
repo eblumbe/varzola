@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/header'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RankingTable } from '@/components/ranking/ranking-table'
+import { TopScorers } from '@/components/ranking/top-scorers'
 import type { RankingEntry } from '@/lib/types'
 
 interface Props {
@@ -52,6 +53,7 @@ export default async function RankingsPage({ params, searchParams }: Props) {
             <TabsList>
               <TabsTrigger value="general">Geral</TabsTrigger>
               {champId && <TabsTrigger value="championship">Campeonato</TabsTrigger>}
+              <TabsTrigger value="scorers">Artilheiros</TabsTrigger>
             </TabsList>
 
             <TabsContent value="general" className="mt-4">
@@ -63,6 +65,14 @@ export default async function RankingsPage({ params, searchParams }: Props) {
                 <RankingTable entries={(champRankings.data as unknown as RankingEntry[]) ?? []} />
               </TabsContent>
             )}
+
+            <TabsContent value="scorers" className="mt-4">
+              <TopScorers
+                entries={(champId
+                  ? (champRankings.data as unknown as RankingEntry[])
+                  : (peladaRankings.data as unknown as RankingEntry[])) ?? []}
+              />
+            </TabsContent>
           </Tabs>
         </main>
         <MobileNav peladaId={peladaId} />
