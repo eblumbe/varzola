@@ -1,16 +1,10 @@
+import { Target } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import type { RankingEntry } from '@/lib/types'
 
 interface TopScorersProps {
   entries: RankingEntry[]
-}
-
-const positionStyle = (i: number) => {
-  if (i === 0) return 'bg-amber-500 text-white'
-  if (i === 1) return 'bg-gray-400 text-white'
-  if (i === 2) return 'bg-amber-700 text-white'
-  return 'bg-[#751a1a] text-white'
 }
 
 export function TopScorers({ entries }: TopScorersProps) {
@@ -35,35 +29,57 @@ export function TopScorers({ entries }: TopScorersProps) {
           .join('')
           .toUpperCase()
           .slice(0, 2)
+        const isTop3 = index < 3
 
         return (
           <div
             key={`${entry.user_id ?? entry.guest_player_id}`}
-            className="flex items-center justify-between bg-[#f5e7c7] p-3 rounded-lg border border-[#e6d5b0]"
+            className={`flex items-center gap-4 p-4 rounded-lg border transition-varzola hover:shadow-varzola-soft ${
+              index === 0
+                ? 'bg-linear-to-r from-amber-50 to-amber-50/30 border-amber-200 dark:from-amber-500/10 dark:to-transparent dark:border-amber-500/20'
+                : 'bg-gradient-card border-border/50'
+            }`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${positionStyle(index)}`}>
-                {index + 1}
-              </div>
-              <Avatar className="border-2 border-[#751a1a]">
-                <AvatarFallback className="bg-[#751a1a] text-white text-xs">{initials}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-bold leading-tight">{entry.player_name}</p>
-                <div className="flex items-center gap-1">
-                  {entry.player_nickname && (
-                    <span className="text-xs text-muted-foreground">@{entry.player_nickname}</span>
-                  )}
-                  {!entry.user_id && (
-                    <Badge variant="outline" className="text-xs">Convidado</Badge>
-                  )}
-                  <span className="text-xs text-muted-foreground">{entry.matches_played} partidas</span>
-                </div>
-              </div>
+            {/* Position */}
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+              index === 0 ? 'bg-amber-500 text-white'
+              : index === 1 ? 'bg-gray-400 text-white'
+              : index === 2 ? 'bg-amber-700 text-white'
+              : 'bg-primary/80 text-white'
+            }`}>
+              {index + 1}
             </div>
-            <div className="text-right shrink-0">
-              <div className="text-2xl font-bold text-[#751a1a]">{entry.total_goals}</div>
-              <div className="text-xs text-muted-foreground">gols</div>
+
+            {/* Avatar */}
+            <Avatar className="border-2 border-destructive/30 shrink-0">
+              <AvatarFallback className="bg-destructive/80 text-white text-xs">{initials}</AvatarFallback>
+            </Avatar>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="font-semibold truncate">{entry.player_name}</p>
+                {index === 0 && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 text-xs shrink-0">
+                    Artilheiro
+                  </Badge>
+                )}
+                {!entry.user_id && (
+                  <Badge variant="outline" className="text-xs shrink-0">Convidado</Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">{entry.matches_played} partidas</span>
+            </div>
+
+            {/* Goals */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Target className={`w-4 h-4 ${isTop3 ? 'text-destructive' : 'text-muted-foreground'}`} />
+              <div className="text-right">
+                <div className={`text-2xl font-bold ${isTop3 ? 'text-destructive' : 'text-foreground'}`}>
+                  {entry.total_goals}
+                </div>
+                <div className="text-xs text-muted-foreground">gols</div>
+              </div>
             </div>
           </div>
         )
