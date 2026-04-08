@@ -31,7 +31,7 @@ export function PlayerCard({ player }: PlayerCardProps) {
     .join('')
     .toUpperCase()
     .slice(0, 2)
-  const Icon = positionIcon(player.position)
+  const Icon = positionIcon(player.position ?? undefined)
 
   return (
     <Card className="bg-gradient-card border-border/50 shadow-varzola-soft hover:shadow-varzola-medium transition-varzola">
