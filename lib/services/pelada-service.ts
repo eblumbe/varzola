@@ -108,10 +108,11 @@ export async function removeMember(memberId: string): Promise<{ error: string | 
 
 export async function getPeladaByCode(code: string): Promise<Pelada | null> {
   const supabase = createClient()
+  // O SELECT direto em peladas so enxerga as peladas de que o usuario ja e membro.
+  // Quem esta entrando por codigo ainda nao e membro, entao a busca passa por esta
+  // funcao, que exige o codigo exato e usuario autenticado.
   const { data } = await supabase
-    .from('peladas')
-    .select('*')
-    .eq('code', code.toUpperCase())
+    .rpc('get_pelada_by_code', { p_code: code.toUpperCase() })
     .single()
 
   return data
