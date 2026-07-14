@@ -1,8 +1,13 @@
 name: Supabase Keep Alive
 
+# O Supabase pausa projeto free-tier que nao recebe "sufficient user database
+# activity" em 7 dias, e a doc quantifica isso como "a few user requests to the
+# database each day". Um ping a cada 3 dias (o cron anterior) fica bem abaixo
+# disso: o Ohana levou aviso de pausa em 13/07/2026 mesmo com os pings dando 200.
+# Dai 4 execucoes por dia x 2 queries = ~8 requests/dia, com folga.
 on:
   schedule:
-    - cron: '0 8 */3 * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -20,6 +25,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          TABLES: 'peladas rounds'
         run: |
           set +e
 
@@ -52,46 +58,44 @@ jobs:
             URL="https://$URL"
           fi
 
-          # Query numa tabela real: só um 2xx prova que a requisição chegou ao Postgres.
-          # O gateway responde 401/404 sem tocar no banco, e o Supabase não conta isso
-          # como atividade — foi o que deixou o projeto pausar em 14/07/2026.
-          ENDPOINT="$URL/rest/v1/peladas?select=id&limit=1"
-          echo "Pingando endpoint (host mascarado pelo Actions)..."
           echo "Tamanho da KEY após sanitizar: ${#KEY} chars"
 
-          STATUS=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
-            --max-time 15 \
-            "$ENDPOINT" \
-            -H "apikey: $KEY" \
-            -H "Authorization: Bearer $KEY")
-          CURL_EXIT=$?
+          FALHAS=0
+          for TABELA in $TABLES; do
+            # Query numa tabela real: so um 2xx prova que a requisicao chegou ao
+            # Postgres. O gateway responde 401/403 sem tocar no banco, e isso nao
+            # conta como atividade — foi o que pausou o Varzola em 14/07/2026.
+            STATUS=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+              --max-time 15 \
+              "$URL/rest/v1/$TABELA?select=id&limit=1" \
+              -H "apikey: $KEY" \
+              -H "Authorization: Bearer $KEY")
+            CURL_EXIT=$?
 
-          echo "curl exit: $CURL_EXIT"
-          echo "HTTP status: $STATUS"
+            if [ "$CURL_EXIT" -ne 0 ]; then
+              echo "::error::[$TABELA] curl falhou (exit $CURL_EXIT). Exit 6 = host não resolve = projeto pausado; despausar no dashboard."
+              FALHAS=$((FALHAS + 1))
+              continue
+            fi
 
-          if [ "$CURL_EXIT" -ne 0 ]; then
-            echo "::error::curl falhou (exit $CURL_EXIT). Exit 6 = host não resolve = projeto pausado; despausar no dashboard."
-            exit 1
-          fi
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ] 2>/dev/null; then
+              echo "[$TABELA] OK (query real chegou ao Postgres, status $STATUS)."
+              continue
+            fi
 
-          if [ -z "$STATUS" ] || ! [[ "$STATUS" =~ ^[0-9]+$ ]]; then
-            echo "::error::Status HTTP inválido: '$STATUS'"
-            exit 1
-          fi
-
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
-            echo "Varzola Supabase ativo (query real OK, status $STATUS)."
+            echo "::error::[$TABELA] falhou com status $STATUS. Corpo:"
             head -5 /tmp/body.txt
-            exit 0
-          fi
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+              echo "::error::Secret SUPABASE_PUBLISHABLE_KEY inválido ou expirado. Regravar em Settings > Secrets com a publishable key (sb_publishable_...), não com a anon legacy."
+            fi
+            FALHAS=$((FALHAS + 1))
+          done
 
-          echo "::error::Falha. Status: $STATUS"
-          echo "Corpo da resposta:"
-          head -20 /tmp/body.txt
-          if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
-            echo "::error::Secret SUPABASE_PUBLISHABLE_KEY inválido ou expirado. Regravar em Settings > Secrets com a publishable key (sb_publishable_...), não com a anon legacy."
+          if [ "$FALHAS" -gt 0 ]; then
+            echo "::error::$FALHAS query(s) falharam — o projeto NÃO recebeu atividade."
+            exit 1
           fi
-          exit 1
+          echo "Varzola Supabase ativo."
 
       - name: Heartbeat anti-desativacao (commit vazio se repo perto de 60d parado)
         if: always()
