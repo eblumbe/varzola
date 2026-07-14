@@ -17,18 +17,81 @@ jobs:
           fetch-depth: 0
 
       - name: Ping Supabase - Varzola
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}")
-          echo "Status: $STATUS"
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
-            echo "Varzola Supabase esta ativo (status $STATUS)."
-          else
-            echo "::error::Falha ao pingar o Supabase. Status: $STATUS"
+          set +e
+
+          sanitize() {
+            local v="$1"
+            v="${v//$'\r'/}"
+            v="${v//$'\n'/}"
+            v="${v## }"
+            v="${v%% }"
+            v="${v#\"}"
+            v="${v%\"}"
+            v="${v#\'}"
+            v="${v%\'}"
+            printf '%s' "$v"
+          }
+
+          URL=$(sanitize "$SUPABASE_URL")
+          URL="${URL%/}"
+          KEY=$(sanitize "$SUPABASE_KEY")
+
+          if [ -z "$URL" ]; then
+            echo "::error::Secret SUPABASE_URL vazio."
             exit 1
           fi
+          if [ -z "$KEY" ]; then
+            echo "::error::Secret SUPABASE_PUBLISHABLE_KEY vazio."
+            exit 1
+          fi
+          if [[ "$URL" != http* ]]; then
+            URL="https://$URL"
+          fi
+
+          # Query numa tabela real: só um 2xx prova que a requisição chegou ao Postgres.
+          # O gateway responde 401/404 sem tocar no banco, e o Supabase não conta isso
+          # como atividade — foi o que deixou o projeto pausar em 14/07/2026.
+          ENDPOINT="$URL/rest/v1/peladas?select=id&limit=1"
+          echo "Pingando endpoint (host mascarado pelo Actions)..."
+          echo "Tamanho da KEY após sanitizar: ${#KEY} chars"
+
+          STATUS=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
+            --max-time 15 \
+            "$ENDPOINT" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY")
+          CURL_EXIT=$?
+
+          echo "curl exit: $CURL_EXIT"
+          echo "HTTP status: $STATUS"
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl falhou (exit $CURL_EXIT). Exit 6 = host não resolve = projeto pausado; despausar no dashboard."
+            exit 1
+          fi
+
+          if [ -z "$STATUS" ] || ! [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+            echo "::error::Status HTTP inválido: '$STATUS'"
+            exit 1
+          fi
+
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+            echo "Varzola Supabase ativo (query real OK, status $STATUS)."
+            head -5 /tmp/body.txt
+            exit 0
+          fi
+
+          echo "::error::Falha. Status: $STATUS"
+          echo "Corpo da resposta:"
+          head -20 /tmp/body.txt
+          if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+            echo "::error::Secret SUPABASE_PUBLISHABLE_KEY inválido ou expirado. Regravar em Settings > Secrets com a publishable key (sb_publishable_...), não com a anon legacy."
+          fi
+          exit 1
 
       - name: Heartbeat anti-desativacao (commit vazio se repo perto de 60d parado)
         if: always()
@@ -36,7 +99,7 @@ jobs:
           LAST=$(git log -1 --format=%ct)
           NOW=$(date +%s)
           DAYS=$(( (NOW - LAST) / 86400 ))
-          echo "Dias desde o ultimo commit: $DAYS"
+          echo "Dias desde o último commit: $DAYS"
           if [ "$DAYS" -ge 50 ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -44,5 +107,5 @@ jobs:
             git push
             echo "Heartbeat: commit vazio enviado (repo estava $DAYS dias parado)."
           else
-            echo "Heartbeat: sem necessidade (repo ativo ha $DAYS dias)."
+            echo "Heartbeat: sem necessidade (repo ativo há $DAYS dias)."
           fi
