@@ -111,11 +111,13 @@ export async function getPeladaByCode(code: string): Promise<Pelada | null> {
   // O SELECT direto em peladas so enxerga as peladas de que o usuario ja e membro.
   // Quem esta entrando por codigo ainda nao e membro, entao a busca passa por esta
   // funcao, que exige o codigo exato e usuario autenticado.
+  // Num client sem tipos gerados, o .rpc() devolve `data` como `unknown` (o
+  // supabase-js forca tipagem explicita em RPC), diferente do .from().select().
   const { data } = await supabase
     .rpc('get_pelada_by_code', { p_code: code.toUpperCase() })
     .single()
 
-  return data
+  return data as Pelada | null
 }
 
 export async function requestToJoin(
